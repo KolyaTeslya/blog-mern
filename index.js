@@ -14,7 +14,7 @@ mongoose
     'mongodb+srv://tesliamm:qLkTRVMIeaq6VsAW@cluster0.ob0okgi.mongodb.net/blog?retryWrites=true&w=majority&appName=Cluster0',
   )
   .then(() => console.log('DB ok'))
-  .catch(() => console.log('DB error', err));
+  .catch((err) => console.log('DB error', err));
 
 const app = express();
 
@@ -100,12 +100,22 @@ app.post('/auth/register', registerValidation, async (req, res) => {
   }
 });
 
-app.get('/auth/me', checkAuth, (req, res) => {
+app.get('/auth/me', checkAuth, async (req, res) => {
   try {
-    res.json({
-      success: true,
-    })
-  } catch (err) {}
+    const user = await UserModel.findById(req.userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'Пользователь не найден' });
+    }
+    const { passwordHash, ...userData } = user._doc;
+
+    res.json(userData);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({
+      message: 'Нет доступа',
+    });
+  }
 });
 
 app.listen(4444, (err) => {
